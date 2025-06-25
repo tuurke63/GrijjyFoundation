@@ -34,7 +34,6 @@ uses
   {$ELSEIF Defined(ANDROID)}
   Androidapi.JNI.Os,
   Androidapi.JNI.JavaTypes,
-  Androidapi.JNI.JavaUtil,
   Androidapi.JNIBridge,
   {$ELSEIF Defined(LINUX)}
   Posix.Time,
@@ -660,7 +659,7 @@ begin
 
   // Destroy workers
   for Worker in FWorkers do
-    Worker.DisposeOf;
+    Worker.Free;
 
   // Close the epoll instance handle
   if FHandle <> -1 then

@@ -568,7 +568,7 @@ TgoBsonSerializer.RegisterCustomSerializer<TgoAlias>(TgoAliasSerializer);
   not serializable, or if the JSON/BSON to deserialize is invalid. To prevent
   exceptions, you can use the TrySerialize and TryDeserialize methods instead.
   These return False if (de)serialization failed.
-* Members of type TDateTime are expected to be un UTC format. No attempt is made
+* Members of type TDateTime are expected to be in UTC format. No attempt is made
   to convert from local time to UTC and vice versa. *)
 
 {$INCLUDE 'Grijjy.inc'}
@@ -1376,7 +1376,7 @@ type
         T: the type for which to use the custom serializer.
         ASerializerClass: the serializer class to use to (de)serialize values
           of type T. }
-    class procedure RegisterCustomSerializer<T: record>(const ASerializerClass: TCustomSerializerClass); overload; static;
+    class procedure RegisterCustomSerializer<T{$IF (RTLVersion < 36)}: record{$ENDIF}>(const ASerializerClass: TCustomSerializerClass); overload; static;
 
     { Registers a custom serializer for a specific type.
       See unit documentation for details.
@@ -2507,10 +2507,10 @@ begin
 
     TgoBsonRepresentation.String:
       begin
-        S := FormatDateTime('yyyy-mm-dd"T"hh:nn:ss', AValue, goUSFormatSettings);
-        MS := MilliSecondOf(AValue);
-        if (MS <> 0) then
-          S := S + '.' + IntToStr(MS * 10000);
+        S := DateToISO8601(AValue);
+        if (S.EndsWith('.000Z')) then
+          { Only include milliseconds if not 0 }
+          S := S.Remove(S.Length - 5, 4);
         AWriter.WriteString(S);
       end
   else
@@ -2960,7 +2960,7 @@ end;
 
 destructor TgoBsonSerializer.TStructSerializer.Destroy;
 begin
-  FInfoByName.DisposeOf;
+  FInfoByName.Free;
   inherited;
 end;
 
@@ -4457,7 +4457,7 @@ begin
       SetObjectProp(AInstance, AProp.Info, Obj)
     else
     begin
-      Obj.DisposeOf;
+      Obj.Free;
       raise EgoBsonSerializerError.CreateFmt('Cannot set read-only property %s.%s', [Obj.ClassName, AProp.Name]);
     end;
   end;

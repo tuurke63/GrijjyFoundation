@@ -408,7 +408,7 @@ type
     var
       FooPtr: TgoValueDictionary<Integer, TFoo>.P;
     </source> }
-  TgoPtr<T: record> = record
+  TgoPtr<T{$IF (RTLVersion < 36)}: record{$ENDIF}> = record
   public type
     P = ^T;
   end;
@@ -430,7 +430,7 @@ type
 
     Note that you should not cache these pointers for long-term use as they
     become invalid when you modify the list (add or remove items). }
-  TgoValueList<T: record> = class
+  TgoValueList<T{$IF (RTLVersion < 36)}: record{$ENDIF}> = class
   public type
     { The pointer type for referencing items in this list. }
     P = TgoPtr<T>.P;
@@ -555,7 +555,7 @@ type
 
     Note that you should not cache these pointers for long-term use as they
     become invalid when you modify the dictionary (add or remove items). }
-  TgoValueDictionary<TKey; TValue: record> = class
+  TgoValueDictionary<TKey; TValue{$IF (RTLVersion < 36)}: record{$ENDIF}> = class
   public type
     { The pointer type for referencing values in this dictionary. }
     PValue = TgoPtr<TValue>.P;
@@ -887,8 +887,9 @@ function TgoReadOnlySet<T>.Contains(const AItem: T): Boolean;
 var
   Mask, Index, HashCode, HC: Integer;
 begin
+  Result := False;
   if (FCount = 0) then
-    Exit(False);
+    Exit;
 
   HashCode := FComparer.GetHashCode(AItem) and $7FFFFFFF;
   Mask := Length(FItems) - 1;
@@ -905,8 +906,6 @@ begin
 
     Index := (Index + 1) and Mask;
   end;
-
-  Result := False;
 end;
 
 constructor TgoReadOnlySet<T>.Create;
@@ -1137,7 +1136,7 @@ begin
     if (FItems[I].HashCode <> EMPTY_HASH) then
     begin
       Item := FItems[I].Item;
-      PObject(@Item)^.DisposeOf;
+      PObject(@Item)^.Free;
     end;
   end;
   inherited;
@@ -1180,7 +1179,7 @@ begin
   if IsManagedType(T) then
     FItems[Gap].Item := Default(T);
 
-  PObject(@Item)^.DisposeOf;
+  PObject(@Item)^.Free;
 
   Dec(FCount);
 end;
@@ -1785,8 +1784,9 @@ function TgoValueDictionary<TKey, TValue>.ContainsKey(
 var
   Mask, Index, HashCode, HC: Integer;
 begin
+  Result := False;
   if (FCount = 0) then
-    Exit(False);
+    Exit;
 
   HashCode := FComparer.GetHashCode(AKey) and $7FFFFFFF;
   Mask := Length(FItems) - 1;
@@ -1803,8 +1803,6 @@ begin
 
     Index := (Index + 1) and Mask;
   end;
-
-  Result := False;
 end;
 
 constructor TgoValueDictionary<TKey, TValue>.Create(
